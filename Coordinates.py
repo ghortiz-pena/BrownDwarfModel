@@ -14,12 +14,11 @@ class Coordinates(object):
     """
 
     __metaclass__ = ABCMeta
-    q_1 = 'foo'
-    q_2 = 'bar'
-    q_3 = 'huh'
+
+    @abstractmethod
     def __init__(self, system, q):
-        self.system = system
-        self.q = {q_1 : q[0], q_2 : q[1], q_3 : q[2]}
+        self.system = ''
+        self.q = {}
         
     @abstractmethod
     def transform(self, to):
@@ -50,8 +49,9 @@ class Coordinates(object):
 
         # Rotation matrix of the first (and only, for this case) Euler angle
         euler = np.array([[1, 0, 0],[0,np.cos(inc), np.sin(inc)],[0,-np.sin(inc), np.cos(inc)]])
-
-        rot = np.dot(rot, euler)
+        q = np.array([rot.q['x'], rot.q['y'], rot.q['z']])
+        q = np.dot(q, euler)
+        rot = Cartesian(q)
         
         if rot.system != self.system:
             rot = rot.transform(self.system)
@@ -61,9 +61,10 @@ class Coordinates(object):
     
 
 class Spherical(Coordinates):
-    q_1 = 'r'
-    q_2 = 'theta'
-    q_3 = 'phi'
+
+    def __init__(self, q):
+        self.system = 'spherical'
+        self.q = {'r' : q[0], 'theta' : q[1], 'phi' : q[2]}
 
     def transform(self, to):
         if to == self.system:
@@ -81,22 +82,23 @@ class Spherical(Coordinates):
             Q[1] = r * np.sin(theta) * np.sin(phi)
             Q[2] = r * np.cos(theta)
 
-            out = Cartesian(to, Q)
+            out = Cartesian(Q)
 
         if to == "cylindrical":
             Q[0] = r * np.sin(theta)
             Q[1] = phi
             Q[2] = r * np.cos(theta)
 
-            out = Cylindrical(to, Q)
+            out = Cylindrical(Q)
 
         return out
     
 
 class Cartesian(Coordinates):
-    q_1 = 'x'
-    q_2 = 'y'
-    q_3 = 'z'
+   
+    def __init__(self, q):
+        self.system = 'cartesian'
+        self.q = {'x' : q[0], 'y' : q[1], 'z' : q[2]}
 
     def transform(self, to):
         if to == self.system:
@@ -111,26 +113,27 @@ class Cartesian(Coordinates):
         
         if to == "spherical":
             Q[0] = np.sqrt(x**2 + y**2 + z**2)
-            Q[1] = np.arccos(z / Q[0])
+            Q[1] = np.arccos(z / (x**2 + y**2 + z**2))
             Q[2] = np.arctan2(y, x)
 
-            out = Spherical(to, Q)
+            out = Spherical(Q)
 
         if to == "cylindrical":
             Q[0] = np.sqrt(x**2 + y**2)
             Q[1] = np.arctan2(y, x)
             Q[2] = z
 
-            out = Cylindrical(to, Q)
+            out = Cylindrical(Q)
 
         return out
     
 
 class Cylindrical(Coordinates):
-    q_1 = 's'
-    q_2 = 'phi'
-    q_3 = 'z'
-    
+
+    def __init__(self, q):
+        self.system = 'cylindrical'
+        self.q = {'s' : q[0], 'phi' : q[1], 'z' : q[2]}
+
     def transform(self, to):
         if to == self.system:
             print "This transformation is invalid"
@@ -147,14 +150,29 @@ class Cylindrical(Coordinates):
             Q[1] = np.arctan(s/z)
             Q[2] = phi
 
-            out = Spherical(to, Q)
+            out = Spherical(Q)
 
         if to == "cartesian":
             Q[0] = s * np.cos(phi)
             Q[1] = s * np.sin(phi)
             Q[2] = z
 
-            out = Cartesian(to, Q)
+            out = Cartesian(Q)
 
         return out
     
+def main():
+    # This is a simple example of how the objects should work
+    import matplotlib.pyplot as plt
+    
+    s_pos = []
+    car_pos = []
+    for i in range(50):
+        s_pos.append(Spherical([i+1, np.pi/4, 0]))
+
+        car_pos.append(s_pos[i].transform('cylindrical'))
+
+
+if __name__ == "__main__":
+    main()
+        
