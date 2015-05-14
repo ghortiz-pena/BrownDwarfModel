@@ -60,6 +60,9 @@ class Coordinates(object):
 
     
 
+
+    
+
 class Spherical(Coordinates):
 
     def __init__(self, q):
@@ -160,6 +163,19 @@ class Cylindrical(Coordinates):
             out = Cartesian(Q)
 
         return out
+
+def listify(c_array, key):
+    """
+    Function to make dealing with arrays of coordinate objects easier
+    Input:
+         c_array - Array of Coordinate objects
+         key - A string specifying which component to retrieve
+    Output:
+         A - A numpy array of the values of the specified component
+    """
+    
+    A = np.array([c_array[i].q[key] for i in range(len(c_array))])
+    return A
     
 def main():
     # This is a simple example of how the objects should work
@@ -168,9 +184,13 @@ def main():
     s_pos = []
     car_pos = []
     for i in range(50):
-        s_pos.append(Spherical([i+1, np.pi/4, 0]))
+        s_pos.append(Spherical([1, np.pi/4, i/np.pi]))
 
-        car_pos.append(s_pos[i].transform('cylindrical'))
+        car_pos.append(s_pos[i].transform('cartesian'))
+
+   
+    plt.plot(listify(car_pos, 'x'))
+    plt.show()
 
 
 if __name__ == "__main__":
