@@ -48,19 +48,15 @@ class Coordinates(object):
             rot = rot.transform("cartesian")
 
         # Rotation matrix of the first (and only, for this case) Euler angle
-        euler = np.array([[1, 0, 0],[0,np.cos(inc), np.sin(inc)],[0,-np.sin(inc), np.cos(inc)]])
+        euler = np.array([[1, 0, 0],[0, np.cos(inc), -np.sin(inc)],[0, np.sin(inc), np.cos(inc)]])
         q = np.array([rot.q['x'], rot.q['y'], rot.q['z']])
-        q = np.dot(q, euler)
+        q = np.dot(euler, q)
         rot = Cartesian(q)
         
         if rot.system != self.system:
             rot = rot.transform(self.system)
 
         return rot
-
-    
-
-
     
 
 class Spherical(Coordinates):
