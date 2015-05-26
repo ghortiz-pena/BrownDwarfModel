@@ -1,7 +1,7 @@
 def main():
     import numpy as np
     import matplotlib
-    matplotlib.use('PS')
+    #matplotlib.use('PS')
     import matplotlib.pyplot as plt
     import Coordinates as coords
 
@@ -9,13 +9,14 @@ def main():
     L = 2 # Specifying the magnetic L-shell
     m = 9.11e-31 # mass of an electron, in kg
     e_0 = 1.6e-19 # charge of an electron, in Coulombs
+    beta = 0.05 # average v/c of electrons
     P = 7200 # rotation period of the star, in seconds
     B_0 = 0.256 # magnetic field strength at the radius of the star, in Tesla
     pi = np.pi # pi
     inc = pi/2 # inclination between the rotation axis and the line of sight
     d = pi/2 # inclination angle between the rotation axis and the magnetic dipole axis    
     # the local electron cyclotron frequency at the radius of the star, for v/c = 0.1; in Hz
-    f_0 = e_0 * (B_0/(2*pi*m)) * (np.sqrt(1 - 0.1**2))
+    f_0 = e_0 * (B_0/(2*pi*m)) * (np.sqrt(1 - beta**2))
 
     pos = np.array([])
     phase = np.array([i/float(P) for i in range(2*P)]) # phase, to plot the results
@@ -33,11 +34,15 @@ def main():
             # Then the equation for the L-shell is used to determine the 'true' distance from the center
             lines[i].q['r'] = lines[i].q['r'] * np.cos(pi/2 - lines[i].q['theta'])**2
             # calculating the frequency relative to the local electron cyclotron frequency at the radius of the star
-            f = np.append(f, min(1, np.sqrt(1 + 3 * np.cos(lines[i].q['theta'])**2) / (lines[i].q['r']**(3))))
+            f_i = np.sqrt(1 + 3 * np.cos(lines[i].q['theta'])**2) / (lines[i].q['r']**(3))
+            f = np.append(f, min(1, f_i))
+            
             # perp is the beaming angle in the shell electron distribution
             perp = pi/2 - np.arccos(2 * np.cos(lines[i].q['theta']) / np.sqrt(1 + 3 * np.cos(lines[i].q['theta'])**2))
+            # par is the beaming angle in the loss-cone electron distribution
+            par = np.arccos(beta / np.sqrt(1 - f_i))
             # and finally, determining the intensity of the beamed emission
-            mu = abs((lines[i].q['theta'] - perp)/(2*pi))
+            mu = abs((lines[i].q['theta'] - par)/(2*pi))
             if lines[i].q['theta'] < pi/2:
                 CP = 1
             else:
@@ -59,13 +64,14 @@ def main():
             flux[f[i, j], t[i]] = I[i, j]
 
             
-    dims = [0, 2, 0, 1]
+    dims = [0, 2, 0, f_0/1e9]
     plt.imshow(flux, aspect = 'auto', origin = 'lower', extent = dims, cmap='gray')
-    plt.ylabel(r"$\frac{f}{f_{B_0}}$")
+    #$\frac{f}{f_{B_0}}$
+    plt.ylabel(r"Frequency (GHz)")
     plt.xlabel(r"Phase")
     plt.title("Relative Intensity")
     plt.colorbar()
-    plt.savefig('../../Desktop/DynSim/Spectrum')
+    #plt.savefig('../../Desktop/DynSim/Spectrum')
     #plt.plot(phase, I[:, 1])
     plt.show()
 
