@@ -5,19 +5,26 @@ def main():
     import matplotlib.pyplot as plt
     import Coordinates as coords
 
-    # First, physical constants in MKS units
-    L = 2 # Specifying the magnetic L-shell
+    # First, reading in physical constants in MKS units
+
     m = 9.11e-31 # mass of an electron, in kg
     e_0 = 1.6e-19 # charge of an electron, in Coulombs
-    beta = 0.05 # average v/c of electrons
-    P = 7200 # rotation period of the star, in seconds
-    B_0 = 0.256 # magnetic field strength at the radius of the star, in Tesla
-    pi = np.pi # pi
-    inc = pi/2 # inclination between the rotation axis and the line of sight
-    d = pi/2 # inclination angle between the rotation axis and the magnetic dipole axis    
+    pi = np.pi   # pi
+
+    inpt = open('dynsim.in')
+    for line in inpt:
+        l = line.split(',')
+        if l[0] != "#":
+            P = int(l[0])  # rotation period of the star, in seconds
+            inc = float(l[1])*(pi/180) # inclination between the rotation axis and the line of sight
+            d = float(l[2])*(pi/180) # inclination angle between the rotation axis and the magnetic dipole axis
+            L = float(l[3]) # Magnetic L-shell value
+            B_0 = float(l[4]) # magnetic field strength at the radius of the star, in Tesla
+            beta = float(l[5]) # average v/c of electrons
+            distr = l[6] # string indicator of which electron distribution to use
+
     # the local electron cyclotron frequency at the radius of the star, for v/c = 0.1; in Hz
     f_0 = e_0 * (B_0/(2*pi*m)) * (np.sqrt(1 - beta**2))
-
     pos = np.array([])
     phase = np.array([i/float(P) for i in range(2*P)]) # phase, to plot the results
     I = np.array([])
@@ -36,17 +43,19 @@ def main():
             # calculating the frequency relative to the local electron cyclotron frequency at the radius of the star
             f_i = np.sqrt(1 + 3 * np.cos(lines[i].q['theta'])**2) / (lines[i].q['r']**(3))
             f = np.append(f, min(1, f_i))
-            
-            # perp is the beaming angle in the shell electron distribution
-            perp = pi/2 - np.arccos(2 * np.cos(lines[i].q['theta']) / np.sqrt(1 + 3 * np.cos(lines[i].q['theta'])**2))
-            # par is the beaming angle in the loss-cone electron distribution
-            par = np.arccos(beta / np.sqrt(1 - f_i))
-            # and finally, determining the intensity of the beamed emission
-            mu = abs((lines[i].q['theta'] - par)/(2*pi))
+            # determining the beaming angle of the emission
+            if distr == "shell":
+                beam = pi/2 - np.arccos(2 * np.cos(lines[i].q['theta']) / np.sqrt(1 + 3 * np.cos(lines[i].q['theta'])**2))
+            if distr == "cone":
+                beam = np.arccos(beta / np.sqrt(1 - f_i))
+
+            mu = abs((lines[i].q['theta'] - beam)/(2*pi))
+            # Determining circular polarization 
             if lines[i].q['theta'] < pi/2:
                 CP = 1
             else:
                 CP = -1
+
             I = np.append(I, CP * np.exp(-np.power(mu, 2.) / (2 * np.power(0.01, 2.)))/np.sqrt(2*pi*0.0001))
 
         pos = np.append(pos, lines)

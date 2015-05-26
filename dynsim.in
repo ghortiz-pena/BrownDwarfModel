@@ -1,0 +1,10 @@
+#, This is an input file for the radio-emission modeling code developed by G. H. Ortiz-Pena
+#, The file contains the physical parameters of the simulation, such as the star's rotation period,
+#, inclinaiton angles, average electron energy, etc. 
+#,
+#, Format is as follows (separated by commas):
+#, Period, i, delta
+#, L-shell, B_0, beta
+#, e-distribution
+#,
+7200,90,60,2,0.256,0.1,cone,
